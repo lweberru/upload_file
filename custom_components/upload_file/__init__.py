@@ -9,6 +9,7 @@ from typing import Any
 
 import voluptuous as vol
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.helpers import aiohttp_client
 
@@ -26,11 +27,11 @@ SERVICE_SCHEMA = vol.Schema(
 
 
 def _normalize_path(raw_path: str | None) -> str:
-    path = (raw_path or "www/bmw_status_card").lstrip("/").rstrip("/")
+    path = (raw_path or "www/upload_file").lstrip("/").rstrip("/")
     if not path.startswith("www/"):
         path = f"www/{path}"
     if ".." in Path(path).parts:
-        raise vol.Invalid("Ungültiger Pfad.")
+        raise vol.Invalid("Invalid path.")
     return path
 
 
@@ -70,13 +71,16 @@ def _parse_data_base64(data_base64: str) -> tuple[bytes, str | None]:
     return base64.b64decode(data_base64), None
 
 
-async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
+async def _async_register_service(hass: HomeAssistant) -> None:
+    if hass.services.has_service(DOMAIN, SERVICE_UPLOAD):
+        return
+
     async def _handle_upload(call: ServiceCall) -> dict[str, Any]:
         url = call.data.get("url")
         data_base64 = call.data.get("data_base64")
 
         if not url and not data_base64:
-            raise vol.Invalid("url oder data_base64 erforderlich")
+            raise vol.Invalid("url or data_base64 required")
 
         path = _normalize_path(call.data.get("path"))
         filename = _normalize_filename(call.data.get("filename"))
@@ -120,4 +124,17 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
         schema=SERVICE_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
+
+
+async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
+    await _async_register_service(hass)
+    return True
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    await _async_register_service(hass)
+    return True
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True

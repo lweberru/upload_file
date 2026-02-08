@@ -1,30 +1,34 @@
 # Upload File (Home Assistant)
 
-Eine minimale Home-Assistant-Integration zum Speichern von Bildern nach `/config/www` und Rückgabe der `/local/`-URL. Unterstützt das Hochladen per URL oder Base64 (auch als data URI).
+A minimal Home Assistant integration to store files under `/config/www` and return the `/local/` URL. Supports upload via URL or Base64 (including data URI).
 
 ## Installation (HACS)
 
-1. Füge dieses Repository als Custom-Repository in HACS hinzu.
-2. Installiere die Integration **Upload File**.
-3. Starte Home Assistant neu.
+1. Add this repository as a custom repository in HACS.
+2. Install the **Upload File** integration.
+3. Restart Home Assistant.
+
+## Add via UI
+
+Settings → Devices & Services → Add Integration → **Upload File**.
 
 ## Service
 
 ### `upload_file.upload_file`
 
-Lädt ein Bild von einer URL oder Base64-Daten nach `/config/www` und gibt die lokale URL zurück.
+Downloads a file from URL or Base64 data to `/config/www` and returns the local URL.
 
-**Felder**
-- `url` (optional): Bild-URL zum Herunterladen.
-- `data_base64` (optional): Base64-Inhalt oder data URI.
-- `filename` (optional): Dateiname (ohne Pfad).
-- `path` (optional): Zielpfad relativ zu `/config` (Standard: `www/upload_file`).
+**Fields**
+- `url` (optional): Image URL to download.
+- `data_base64` (optional): Base64 content or data URI.
+- `filename` (optional): Filename (without path).
+- `path` (optional): Target path relative to `/config` (default: `www/upload_file`).
 
-**Antwort**
-- `local_url`: Pfad unter `/local/…`
-- `filename`: Vollständiger Pfad auf dem Dateisystem
+**Response**
+- `local_url`: Path under `/local/…`
+- `filename`: Full path on the filesystem
 
-### Beispiel: URL
+### Example: URL
 ```yaml
 service: upload_file.upload_file
 data:
@@ -32,7 +36,7 @@ data:
   path: www/upload_file
 ```
 
-### Beispiel: Base64
+### Example: Base64
 ```yaml
 service: upload_file.upload_file
 data:
@@ -41,11 +45,11 @@ data:
   path: www/upload_file
 ```
 
-## Hinweise
+## Notes
 
-- Der Zielpfad muss unter `/config/www` liegen, damit Home Assistant ihn als `/local/…` ausliefert.
-- Es werden einfache Bildtypen unterstützt (png, jpg, webp). Der Dateityp wird aus MIME-Type oder URL abgeleitet.
+- Target path must be under `/config/www` to be served via `/local/…`.
+- Supported image types: png, jpg, webp. The file type is inferred from MIME type or URL.
 
-## Lizenz
+## License
 
 MIT

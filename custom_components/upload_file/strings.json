@@ -1,0 +1,10 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Upload File",
+        "description": "Adds the Upload File integration."
+      }
+    }
+  }
+}
