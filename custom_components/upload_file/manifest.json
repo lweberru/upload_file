@@ -1,7 +1,7 @@
 {
   "domain": "upload_file",
   "name": "Upload File",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "documentation": "https://github.com/lweberru/upload_file",
   "requirements": [],
   "codeowners": [],
