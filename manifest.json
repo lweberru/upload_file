@@ -1,9 +1,0 @@
-{
-  "domain": "upload_file",
-  "name": "Upload File",
-  "version": "0.1.1",
-  "documentation": "https://github.com/lweberru/upload_file",
-  "requirements": [],
-  "codeowners": [],
-  "iot_class": "local_push"
-}
