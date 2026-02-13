@@ -15,6 +15,7 @@ from homeassistant.helpers import aiohttp_client
 
 DOMAIN = "upload_file"
 SERVICE_UPLOAD = "upload_file"
+SERVICE_EXISTS = "file_exists"
 
 SERVICE_SCHEMA = vol.Schema(
     {
@@ -22,6 +23,14 @@ SERVICE_SCHEMA = vol.Schema(
         vol.Optional("data_base64"): str,
         vol.Optional("filename"): str,
         vol.Optional("path"): str,
+    }
+)
+
+EXISTS_SCHEMA = vol.Schema(
+    {
+        vol.Optional("path"): str,
+        vol.Optional("filename"): str,
+        vol.Optional("local_url"): str,
     }
 )
 
@@ -42,6 +51,38 @@ def _normalize_filename(raw_filename: str | None) -> str | None:
     if filename in {"", ".", ".."}:
         return None
     return filename
+
+
+def _normalize_local_url(raw_url: str | None) -> str | None:
+    if not raw_url:
+        return None
+    trimmed = str(raw_url).strip()
+    if not trimmed:
+        return None
+    return trimmed.split("?", 1)[0]
+
+
+def _resolve_local_path(local_url: str) -> str:
+    if local_url.startswith("http://") or local_url.startswith("https://"):
+        from urllib.parse import urlparse
+
+        parsed = urlparse(local_url)
+        local_path = parsed.path
+    else:
+        local_path = local_url
+
+    if local_path.startswith("/local/"):
+        rel = local_path[len("/local/") :]
+    elif local_path.startswith("local/"):
+        rel = local_path[len("local/") :]
+    else:
+        raise vol.Invalid("local_url must start with /local/")
+
+    if ".." in Path(rel).parts:
+        raise vol.Invalid("Invalid local_url path.")
+
+    rel = rel.strip("/")
+    return f"www/{rel}" if rel else "www"
 
 
 def _guess_extension(mime_type: str | None, url: str | None) -> str:
@@ -72,8 +113,6 @@ def _parse_data_base64(data_base64: str) -> tuple[bytes, str | None]:
 
 
 async def _async_register_service(hass: HomeAssistant) -> None:
-    if hass.services.has_service(DOMAIN, SERVICE_UPLOAD):
-        return
 
     async def _handle_upload(call: ServiceCall) -> dict[str, Any]:
         url = call.data.get("url")
@@ -117,13 +156,43 @@ async def _async_register_service(hass: HomeAssistant) -> None:
             "filename": str(full_path),
         }
 
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_UPLOAD,
-        _handle_upload,
-        schema=SERVICE_SCHEMA,
-        supports_response=SupportsResponse.OPTIONAL,
-    )
+    async def _handle_exists(call: ServiceCall) -> dict[str, Any]:
+        local_url = _normalize_local_url(call.data.get("local_url"))
+        path = call.data.get("path")
+        filename = call.data.get("filename")
+
+        if local_url:
+            normalized_path = _resolve_local_path(local_url)
+            full_path = Path(hass.config.path(normalized_path))
+        else:
+            if not path or not filename:
+                raise vol.Invalid("local_url or path+filename required")
+            normalized_path = _normalize_path(path)
+            normalized_filename = _normalize_filename(filename)
+            if not normalized_filename:
+                raise vol.Invalid("Invalid filename")
+            full_path = Path(hass.config.path(normalized_path)) / normalized_filename
+
+        exists = full_path.exists() and full_path.is_file()
+        return {"exists": exists}
+
+    if not hass.services.has_service(DOMAIN, SERVICE_UPLOAD):
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_UPLOAD,
+            _handle_upload,
+            schema=SERVICE_SCHEMA,
+            supports_response=SupportsResponse.OPTIONAL,
+        )
+
+    if not hass.services.has_service(DOMAIN, SERVICE_EXISTS):
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_EXISTS,
+            _handle_exists,
+            schema=EXISTS_SCHEMA,
+            supports_response=SupportsResponse.OPTIONAL,
+        )
 
 
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:

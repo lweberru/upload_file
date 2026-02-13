@@ -31,3 +31,29 @@ upload_file:
       example: www/upload_file
       selector:
         text:
+
+file_exists:
+  name: File exists
+  description: Checks whether a local file exists in /config/www.
+  fields:
+    local_url:
+      name: Local URL
+      description: /local/ URL to check.
+      required: false
+      example: /local/upload_file/example.png
+      selector:
+        text:
+    path:
+      name: Path
+      description: Target path relative to /config (default www/upload_file).
+      required: false
+      example: www/upload_file
+      selector:
+        text:
+    filename:
+      name: Filename
+      description: Filename to check in the given path.
+      required: false
+      example: example.png
+      selector:
+        text:
