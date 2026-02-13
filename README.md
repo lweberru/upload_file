@@ -28,6 +28,33 @@ Downloads a file from URL or Base64 data to `/config/www` and returns the local 
 - `local_url`: Path under `/local/…`
 - `filename`: Full path on the filesystem
 
+### `upload_file.file_exists`
+
+Checks whether a file exists in `/config/www`. You can provide either a `/local/…` URL or a `path` + `filename`.
+
+**Fields**
+- `local_url` (optional): `/local/...` URL to check.
+- `path` (optional): Target path relative to `/config` (default: `www/upload_file`).
+- `filename` (optional): Filename (without path).
+
+**Response**
+- `exists`: `true` if the file exists, otherwise `false`.
+
+### Example: local_url
+```yaml
+service: upload_file.file_exists
+data:
+  local_url: /local/upload_file/example.png
+```
+
+### Example: path + filename
+```yaml
+service: upload_file.file_exists
+data:
+  path: www/upload_file
+  filename: example.png
+```
+
 ### Example: URL
 ```yaml
 service: upload_file.upload_file
